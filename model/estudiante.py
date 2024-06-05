@@ -11,8 +11,9 @@ class Estudiante(db.Model):
     correo: str = db.Column(db.String(100), nullable=False)
     telefono: str = db.Column(db.String(9), nullable=False)
     fecha_nacimiento: str = db.Column(db.Date, nullable=False)
+    contraseña: str = db.Column(db.String(5), nullable=False)  # Aquí estaba el error
 
-    def __init__(self, apellido_paterno, apellido_materno, nombres, sexo, correo, telefono, fecha_nacimiento):
+    def __init__(self, apellido_paterno, apellido_materno, nombres, sexo, correo, telefono, fecha_nacimiento, contraseña):
         self.apellido_paterno = apellido_paterno
         self.apellido_materno = apellido_materno
         self.nombres = nombres
@@ -20,3 +21,5 @@ class Estudiante(db.Model):
         self.correo = correo
         self.telefono = telefono
         self.fecha_nacimiento = fecha_nacimiento
+        self.contraseña = contraseña
+

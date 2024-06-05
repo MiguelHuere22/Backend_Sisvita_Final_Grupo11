@@ -8,19 +8,14 @@ estudiantes = Blueprint('estudiantes', __name__)
 def get_mensaje():
     result = {"data": 'Hola, Estudiantes'}
     return jsonify(result)
-from flask import Blueprint, request, jsonify
-from model.estudiante import Estudiante
-from utils.db import db
-
-estudiantes = Blueprint('estudiantes', __name__)
 
 @estudiantes.route('/estudiantes/v1/login', methods=['POST'])
 def login():
     data = request.json
-    id_estudiante = data.get('id_estudiante')
     correo = data.get('correo')
+    contraseña = data.get('contraseña')
 
-    estudiante = Estudiante.query.filter_by(id_estudiante=id_estudiante, correo=correo).first()
+    estudiante = Estudiante.query.filter_by(correo=correo, contraseña=contraseña).first()
 
     if estudiante:
         return jsonify({
@@ -34,7 +29,8 @@ def login():
                 "sexo": estudiante.sexo,
                 "correo": estudiante.correo,
                 "telefono": estudiante.telefono,
-                "fecha_nacimiento": estudiante.fecha_nacimiento.strftime('%Y-%m-%d')
+                "fecha_nacimiento": estudiante.fecha_nacimiento.strftime('%Y-%m-%d'),
+                "contraseña":estudiante.contraseña
             }
         }), 200
     else:
@@ -42,7 +38,6 @@ def login():
             "status_code": 401,
             "msg": "Invalid credentials"
         }), 401
-
 
 @estudiantes.route('/estudiantes/v1/listar', methods=['GET'])
 def listar_estudiantes():
@@ -66,7 +61,8 @@ def agregar_estudiante():
         sexo=data['sexo'],
         correo=data['correo'],
         telefono=data['telefono'],
-        fecha_nacimiento=data['fecha_nacimiento']
+        fecha_nacimiento=data['fecha_nacimiento'],
+        contraseña=data['contraseña']  # Añadir contraseña
     )
     db.session.add(nuevo_estudiante)
     db.session.commit()
@@ -87,6 +83,7 @@ def actualizar_estudiante(id):
     estudiante.correo = data.get('correo', estudiante.correo)
     estudiante.telefono = data.get('telefono', estudiante.telefono)
     estudiante.fecha_nacimiento = data.get('fecha_nacimiento', estudiante.fecha_nacimiento)
+    estudiante.contraseña = data.get('contraseña', estudiante.contraseña)  # Añadir actualización de contraseña
     db.session.commit()
     return jsonify({
         "status_code": 200,
@@ -103,4 +100,3 @@ def eliminar_estudiante(id):
         "status_code": 200,
         "msg": "Estudiante eliminado exitosamente"
     }), 200
-
