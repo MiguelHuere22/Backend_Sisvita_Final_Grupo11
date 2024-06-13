@@ -86,6 +86,7 @@ def listar_respuestas():
 @respuestas.route('/respuestas/v1/agregar', methods=['POST'])
 def agregar_respuestas():
     data = request.json
+    print("Datos recibidos:", data)  # Añadir este log
     id_estudiante = data.get('id_estudiante')
     id_test = data.get('id_test')
     respuestas = data.get('respuestas', [])
@@ -129,10 +130,9 @@ def agregar_respuestas():
     
     db.session.commit()
     
-    # Convertir a diccionarios y eliminar '_sa_instance_state'
     resultado_limpio = []
     for respuesta in nuevas_respuestas:
-        respuesta_dict = respuesta._dict_.copy()
+        respuesta_dict = respuesta.__dict__.copy()
         respuesta_dict.pop('_sa_instance_state', None)
         resultado_limpio.append(respuesta_dict)
     
@@ -141,6 +141,7 @@ def agregar_respuestas():
         "msg": "Respuestas agregadas exitosamente",
         "data": resultado_limpio
     }), 201
+
 
 @respuestas.route('/respuestas/v1/calcular', methods=['POST'])
 def calcular_puntuacion_total():
@@ -216,6 +217,30 @@ def eliminar_respuesta(id):
         "status_code": 200,
         "msg": "Respuesta eliminada exitosamente"
     }), 200
+
+@respuestas.route('/respuestas/v1/preguntas/<int:id_test>', methods=['GET'])
+def obtener_preguntas_por_test(id_test):
+    try:
+        preguntas = Pregunta.query.filter_by(id_test=id_test).all()
+        if not preguntas:
+            return jsonify({
+                "status_code": 404,
+                "msg": "No se encontraron preguntas para el test especificado"
+            }), 404
+
+        preguntas_texto = [{"id_pregunta": pregunta.id_pregunta, "texto": pregunta.texto} for pregunta in preguntas]
+
+        return jsonify({
+            "status_code": 200,
+            "msg": "Preguntas recuperadas exitosamente",
+            "data": preguntas_texto
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "status_code": 500,
+            "msg": "Error al recuperar preguntas",
+            "error": str(e)
+        }), 500
 
 '''
 @respuestas.route('/respuestas/v1/agregar', methods=['POST'])
