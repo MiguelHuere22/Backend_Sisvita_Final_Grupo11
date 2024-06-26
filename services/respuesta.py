@@ -6,7 +6,7 @@ from model.puntaje_opcion import PuntajeOpcion
 from model.area import Area
 from model.test import Test
 from model.rango import Rango
-from model.puntuacion import Puntuacion  # Importar modelo de Puntuacion
+from model.puntuacion import Puntuacion
 from utils.db import db
 from datetime import datetime
 
@@ -16,7 +16,6 @@ respuestas = Blueprint('respuestas', __name__)
 def get_mensaje():
     result = {"data": 'Hola, Respuestas'}
     return jsonify(result)
-
 
 @respuestas.route('/respuestas/v1/listar', methods=['POST'])
 def listar_respuestas():
@@ -58,8 +57,6 @@ def listar_respuestas():
 
     return jsonify(response), 200
 
-
-
 @respuestas.route('/respuestas/v1/agregar', methods=['POST'])
 def agregar_respuestas():
     data = request.json
@@ -77,7 +74,7 @@ def agregar_respuestas():
     for respuesta in respuestas:
         id_pregunta = respuesta.get('id_pregunta')
         texto_respuesta = respuesta.get('texto_respuesta')
-        
+
         if not id_pregunta or not texto_respuesta:
             return jsonify({
                 "status_code": 400,
@@ -103,7 +100,7 @@ def agregar_respuestas():
         nueva_respuesta = Respuesta(id_persona=id_persona, id_opcion=puntaje_opcion.id_opcion)
         db.session.add(nueva_respuesta)
         nuevas_respuestas.append(nueva_respuesta)
-    
+
     db.session.commit()
 
     # Calcular la puntuación total y guardar en la tabla Puntuacion
@@ -122,22 +119,24 @@ def agregar_respuestas():
         id_persona=id_persona,
         id_test=id_test,
         fecha=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        calificacion=interpretacion
+        id_interpretacion=rango.id_rango if rango else None
     )
 
     db.session.add(nueva_puntuacion)
     db.session.commit()
-    
+
     resultado_limpio = []
     for respuesta in nuevas_respuestas:
         respuesta_dict = respuesta.__dict__.copy()
         respuesta_dict.pop('_sa_instance_state', None)
         resultado_limpio.append(respuesta_dict)
-    
+
     return jsonify({
         "status_code": 201,
         "msg": "Respuestas agregadas exitosamente y puntuación calculada",
-        "data": resultado_limpio
+        "data": resultado_limpio,
+        "total_puntaje": total_puntaje if total_puntaje else 0,
+        "interpretacion": interpretacion
     }), 201
 
 @respuestas.route('/respuestas/v1/calcular', methods=['POST'])
@@ -145,24 +144,24 @@ def calcular_puntuacion_total():
     data = request.json
     id_persona = data['id_persona']
     id_test = data['id_test']
-    
+
     total_puntaje = db.session.query(db.func.sum(PuntajeOpcion.puntaje)).join(Respuesta, PuntajeOpcion.id_opcion == Respuesta.id_opcion).filter(
         Respuesta.id_persona == id_persona,
         PuntajeOpcion.id_pregunta.in_(db.session.query(Pregunta.id_pregunta).filter(Pregunta.id_test == id_test))
     ).scalar()
-    
+
     persona = Persona.query.get(id_persona)
     test = Test.query.get(id_test)
-    
+
     if not persona or not test:
         return jsonify({
             "status_code": 404,
             "msg": "Persona o Test no encontrado"
         }), 404
-    
+
     # Obtener el rango correspondiente al puntaje total
     rango = Rango.query.filter(Rango.id_test == id_test, Rango.rango_min <= total_puntaje, Rango.rango_max >= total_puntaje).first()
-    
+
     if not rango:
         interpretacion = "Rango no encontrado"
     else:

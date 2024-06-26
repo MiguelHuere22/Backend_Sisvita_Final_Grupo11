@@ -25,11 +25,12 @@ def listar_ubigeos():
 def agregar_ubigeo():
     data = request.json
     nuevo_ubigeo = Ubigeo(
+        id_ubigeo=data['id_ubigeo'],
         departamento=data['departamento'],
         provincia=data['provincia'],
         distrito=data['distrito'],
         superficie=data['superficie'],
-        altitud=data['altitud'],
+        poblacion=data['poblacion'],
         latitud=data['latitud'],
         longitud=data['longitud']
     )
@@ -41,7 +42,7 @@ def agregar_ubigeo():
         "data": nuevo_ubigeo.__dict__
     }), 201
 
-@ubigeos.route('/ubigeos/v1/actualizar/<int:id>', methods=['PUT'])
+@ubigeos.route('/ubigeos/v1/actualizar/<string:id>', methods=['PUT'])
 def actualizar_ubigeo(id):
     data = request.json
     ubigeo = Ubigeo.query.get_or_404(id)
@@ -49,7 +50,7 @@ def actualizar_ubigeo(id):
     ubigeo.provincia = data.get('provincia', ubigeo.provincia)
     ubigeo.distrito = data.get('distrito', ubigeo.distrito)
     ubigeo.superficie = data.get('superficie', ubigeo.superficie)
-    ubigeo.altitud = data.get('altitud', ubigeo.altitud)
+    ubigeo.poblacion = data.get('poblacion', ubigeo.poblacion)
     ubigeo.latitud = data.get('latitud', ubigeo.latitud)
     ubigeo.longitud = data.get('longitud', ubigeo.longitud)
     db.session.commit()
@@ -59,7 +60,7 @@ def actualizar_ubigeo(id):
         "data": ubigeo.__dict__
     }), 200
 
-@ubigeos.route('/ubigeos/v1/eliminar/<int:id>', methods=['DELETE'])
+@ubigeos.route('/ubigeos/v1/eliminar/<string:id>', methods=['DELETE'])
 def eliminar_ubigeo(id):
     ubigeo = Ubigeo.query.get_or_404(id)
     db.session.delete(ubigeo)

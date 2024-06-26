@@ -8,12 +8,12 @@ class Puntuacion(db.Model):
     id_persona: int = db.Column(db.Integer, db.ForeignKey('persona.id_persona'), nullable=False)
     id_test: int = db.Column(db.Integer, db.ForeignKey('test.id_test'), nullable=False)
     fecha: str = db.Column(db.Date, nullable=False)
-    calificacion: str = db.Column(db.Text)
+    id_interpretacion: int = db.Column(db.Integer, db.ForeignKey('rango.id_rango'), nullable=False)
 
-    def __init__(self, puntaje_total, id_persona, id_test, fecha, calificacion):
+    def __init__(self, puntaje_total, id_persona, id_test, fecha, id_interpretacion):
         self.puntaje_total = puntaje_total
         self.id_persona = id_persona
         self.id_test = id_test
         self.fecha = fecha
-        self.calificacion = calificacion
+        self.id_interpretacion = id_interpretacion
 

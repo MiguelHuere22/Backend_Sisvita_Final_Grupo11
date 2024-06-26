@@ -14,6 +14,7 @@ from services.ubigeo import ubigeos
 from services.usuario import usuarios
 from services.usuario_rol import usuarios_roles
 from services.observacion import observaciones
+from services.correo import correos
 
 from config import DATABASE_CONNECTION
 from sqlalchemy import text
@@ -42,6 +43,7 @@ app.register_blueprint(ubigeos)
 app.register_blueprint(usuarios)
 app.register_blueprint(usuarios_roles)
 app.register_blueprint(observaciones)
+app.register_blueprint(correos)
 
 with app.app_context():
     db.create_all()

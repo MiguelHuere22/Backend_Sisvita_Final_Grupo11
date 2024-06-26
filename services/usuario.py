@@ -1,24 +1,27 @@
 from flask import Blueprint, request, jsonify
+from werkzeug.security import generate_password_hash, check_password_hash
 from model.usuario import Usuario
 from model.rol import Rol
 from model.usuario_rol import UsuarioRol
 from utils.db import db
 from model.persona import Persona
 from model.ubigeo import Ubigeo
+
 usuarios = Blueprint('usuarios', __name__)
 
 @usuarios.route('/usuarios/v1', methods=['GET'])
 def get_mensaje():
     result = {"data": 'Hola, Usuarios'}
     return jsonify(result)
+
 @usuarios.route('/usuarios/v1/login/paciente', methods=['POST'])
 def login_paciente():
     data = request.json
     username = data.get('username')
     password = data.get('password')
 
-    usuario = Usuario.query.filter_by(username=username, password=password).first()
-    if usuario:
+    usuario = Usuario.query.filter_by(username=username).first()
+    if usuario and check_password_hash(usuario.password, password):
         usuario_rol = UsuarioRol.query.filter_by(id_usuario=usuario.id_usuario).first()
         rol = Rol.query.get(usuario_rol.id_rol)
         if rol.tipo_rol == 'Paciente':
@@ -53,15 +56,14 @@ def login_paciente():
             "msg": "Invalid credentials"
         }), 401
 
-
 @usuarios.route('/usuarios/v1/login/especialista', methods=['POST'])
 def login_especialista():
     data = request.json
     username = data.get('username')
     password = data.get('password')
 
-    usuario = Usuario.query.filter_by(username=username, password=password).first()
-    if usuario:
+    usuario = Usuario.query.filter_by(username=username).first()
+    if usuario and check_password_hash(usuario.password, password):
         usuario_rol = UsuarioRol.query.filter_by(id_usuario=usuario.id_usuario).first()
         rol = Rol.query.get(usuario_rol.id_rol)
         if rol.tipo_rol == 'Especialista':
@@ -99,32 +101,32 @@ def login_especialista():
             "msg": "Invalid credentials"
         }), 401
 
-
-@usuarios.route('/usuarios/v1/listar', methods=['GET'])
-def listar_usuarios():
-    usuarios = Usuario.query.all()
-    result = {
-        "data": [usuario.__dict__ for usuario in usuarios],
-        "status_code": 200,
-        "msg": "Se recuperó la lista de Usuarios sin inconvenientes"
-    }
-    for usuario in result["data"]:
-        usuario.pop('_sa_instance_state', None)  # Eliminar metadata de SQLAlchemy
-    return jsonify(result), 200
-
 @usuarios.route('/usuarios/v1/agregar', methods=['POST'])
 def agregar_usuario():
     data = request.json
+    username = data['username']
+    password = data['password']
+    id_persona = data['id_persona']
+    rol_tipo = data['rol']
+
+    # Verificar si el username ya existe
+    if Usuario.query.filter_by(username=username).first():
+        return jsonify({
+            "status_code": 400,
+            "msg": "El nombre de usuario ya existe"
+        }), 400
+
+    # Crear nuevo usuario
     nuevo_usuario = Usuario(
-        username=data['username'],
-        password=data['password'],
-        id_persona=data['id_persona']
+        username=username,
+        password=password,  # La contraseña se hashea en el constructor del modelo
+        id_persona=id_persona
     )
     db.session.add(nuevo_usuario)
     db.session.commit()
 
     # Asignar rol
-    rol = Rol.query.filter_by(tipo_rol=data['rol']).first()
+    rol = Rol.query.filter_by(tipo_rol=rol_tipo).first()
     if not rol:
         return jsonify({
             "status_code": 400,
@@ -135,11 +137,19 @@ def agregar_usuario():
     db.session.add(nuevo_usuario_rol)
     db.session.commit()
 
+    # Preparar datos serializables
+    usuario_data = {
+        "id_usuario": nuevo_usuario.id_usuario,
+        "username": nuevo_usuario.username,
+        "id_persona": nuevo_usuario.id_persona
+    }
+
     return jsonify({
         "status_code": 201,
         "msg": "Usuario agregado exitosamente",
-        "data": nuevo_usuario.__dict__
+        "data": usuario_data
     }), 201
+
 
 @usuarios.route('/usuarios/v1/actualizar/<int:id>', methods=['PUT'])
 def actualizar_usuario(id):
@@ -177,3 +187,24 @@ def eliminar_usuario(id):
         "status_code": 200,
         "msg": "Usuario eliminado exitosamente"
     }), 200
+
+@usuarios.route('/usuarios/v1/correo/<int:id_persona>', methods=['GET'])
+def obtener_correo(id_persona):
+    persona = Persona.query.get(id_persona)
+    if persona:
+        usuario = Usuario.query.filter_by(id_persona=persona.id_persona).first()
+        if usuario:
+            return jsonify({"status_code": 200, "data": {"correo": usuario.username}}), 200  # Suponiendo que el username es el correo
+    return jsonify({"status_code": 404, "msg": "Correo no encontrado para la persona dada"}), 404
+
+@usuarios.route('/usuarios/v1/listar', methods=['GET'])
+def listar_usuarios():
+    usuarios = Usuario.query.all()
+    result = {
+        "data": [usuario.__dict__ for usuario in usuarios],
+        "status_code": 200,
+        "msg": "Se recuperó la lista de Usuarios sin inconvenientes"
+    }
+    for usuario in result["data"]:
+        usuario.pop('_sa_instance_state', None)  # Eliminar metadata de SQLAlchemy
+    return jsonify(result), 200
