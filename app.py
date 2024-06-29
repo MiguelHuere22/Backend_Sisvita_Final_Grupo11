@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_cors import CORS  # Importa CORS
+from flask_cors import CORS
 from utils.db import db
 from services.test import tests
 from services.area import areas
@@ -18,13 +18,13 @@ from services.correo import correos
 
 from config import DATABASE_CONNECTION
 from sqlalchemy import text
-
+import os
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # Configura CORS para permitir todos los orígenes
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_CONNECTION
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Para desactivar las notificaciones de modificaciones de SQLAlchemy
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inicializar SQLAlchemy
 db.init_app(app)
@@ -60,4 +60,5 @@ def check_db():
 ##########################################
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', debug=True, port=port)

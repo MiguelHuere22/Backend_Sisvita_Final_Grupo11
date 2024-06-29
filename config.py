@@ -3,11 +3,11 @@ import os
 
 load_dotenv()
 
-user = os.environ['USER']
-pwd = os.environ['PASSWORD']
-host = os.environ['HOST']
-database = os.environ['DATABASE']
-port = os.environ['PORT']
+db_user = os.environ['DB_USER']
+db_pwd = os.environ['DB_PASSWORD']
+db_host = os.environ['DB_HOST']
+db_name = os.environ['DB_NAME']
+db_port = os.environ['DB_PORT']
 
 # Assuming you are using PostgreSQL
-DATABASE_CONNECTION = f'postgresql://{user}:{pwd}@{host}:{port}/{database}'
+DATABASE_CONNECTION = f'postgresql://{db_user}:{db_pwd}@{db_host}:{db_port}/{db_name}'
