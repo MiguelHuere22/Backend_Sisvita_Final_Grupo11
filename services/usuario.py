@@ -208,3 +208,76 @@ def listar_usuarios():
     for usuario in result["data"]:
         usuario.pop('_sa_instance_state', None)  # Eliminar metadata de SQLAlchemy
     return jsonify(result), 200
+
+@usuarios.route('/registrar-persona-usuario', methods=['POST'])
+def registrar_persona_usuario():
+    data = request.json
+    print('Datos recibidos:', data)
+
+    # Verificar si el username ya existe
+    usuario_existente = Usuario.query.filter_by(username=data['username']).first()
+    if usuario_existente:
+        print('Usuario existente:', usuario_existente)
+        return jsonify({
+            "status_code": 400,
+            "msg": "El nombre de usuario ya existe"
+        }), 400
+
+    # Registrar Persona
+    nueva_persona = Persona(
+        apellido_paterno=data['apellidoPaterno'],
+        apellido_materno=data['apellidoMaterno'],
+        nombres=data['nombres'],
+        sexo=data['sexo'],
+        telefono=data['telefono'],
+        fecha_nacimiento=data['fechaNacimiento'],
+        id_ubigeo=data['ubigeo']
+    )
+    db.session.add(nueva_persona)
+    db.session.commit()
+
+    # Usar el id de la persona recién creada
+    id_persona = nueva_persona.id_persona
+    print('Persona registrada:', nueva_persona)
+
+    # Registrar Usuario
+    nuevo_usuario = Usuario(
+        username=data['username'],
+        password=data['password'],  # La contraseña se hashea en el constructor del modelo
+        id_persona=id_persona
+    )
+    db.session.add(nuevo_usuario)
+    db.session.commit()
+    print('Usuario registrado:', nuevo_usuario)
+
+    # Asignar rol
+    rol = Rol.query.filter_by(tipo_rol=data['rol']).first()
+    if not rol:
+        print('Rol no encontrado:', data['rol'])
+        return jsonify({
+            "status_code": 400,
+            "msg": "Rol no válido"
+        }), 400
+
+    nuevo_usuario_rol = UsuarioRol(id_usuario=nuevo_usuario.id_usuario, id_rol=rol.id_rol)
+    db.session.add(nuevo_usuario_rol)
+    db.session.commit()
+    print('Rol asignado:', nuevo_usuario_rol)
+
+    # Preparar datos serializables
+    usuario_data = {
+        "id_usuario": nuevo_usuario.id_usuario,
+        "username": nuevo_usuario.username,
+        "id_persona": nuevo_usuario.id_persona
+    }
+
+    return jsonify({
+        "status_code": 201,
+        "msg": "Usuario agregado exitosamente",
+        "data": usuario_data
+    }), 201
+
+
+
+
+
