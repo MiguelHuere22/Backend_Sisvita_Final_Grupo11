@@ -29,3 +29,5 @@ class Observacion(db.Model):
             "solicitud_cita": self.solicitud_cita,
             "tratamiento": self.tratamiento  # Inclusión de tratamiento en el diccionario
         }
+
+
