@@ -8,3 +8,4 @@ class Rol(db.Model):
 
     def __init__(self, tipo_rol):
         self.tipo_rol = tipo_rol
+

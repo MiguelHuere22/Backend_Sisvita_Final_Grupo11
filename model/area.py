@@ -8,6 +8,3 @@ class Area(db.Model):
 
     def __init__(self, nombre):
         self.nombre = nombre
-
-
-

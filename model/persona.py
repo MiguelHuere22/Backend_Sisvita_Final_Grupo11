@@ -20,3 +20,5 @@ class Persona(db.Model):
         self.telefono = telefono
         self.fecha_nacimiento = fecha_nacimiento
         self.id_ubigeo = id_ubigeo
+
+
